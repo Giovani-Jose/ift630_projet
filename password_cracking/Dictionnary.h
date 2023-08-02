@@ -17,9 +17,10 @@ public:
 
 private:
     mutex mtx;
+    bool shouldShowProgress=true;
     string foundPasswordFileName;
     void showProgress(int threadNum);
     string searchingPassword = "";
     atomic<bool> isPasswordFound = { false };
-    void search(int numFile, string encodedPass);
+    void search(int numFile, string encodedPass, int threadNumber);
 };

@@ -10,19 +10,18 @@ using namespace std::chrono;
 
 bool Dictionnaire::distributeThreadsForSearching(string password) {
     auto startingTime = system_clock::now();
-    int num = 1;
+    int threadNumber = 1;
 
     vector<thread> threads;
     for (int i = 1; i <= 11; i++) {
-        threads.push_back(thread(&Dictionnaire::search, this, i, password));
+        threads.push_back(thread(&Dictionnaire::search, this, i, password,threadNumber));
+        threadNumber++;
     }
     
     cout << "En recherche...." << endl;
 
     for (auto& t : threads) {
         t.join();
-        showProgress(num);
-        num++;
     }
 
     auto stopingTime = system_clock::now();
@@ -41,11 +40,17 @@ string Dictionnaire::locatedPassword()
 
 void::Dictionnaire::showProgress(int num)
 {
-    cout << "Le thread numero " << num << " a terminee sa recherche et n'a pas trouvee le mot de passe" << endl;
+    if (!isPasswordFound)
+        cout <<endl<< "Le thread numero " << num << " a terminee sa recherche et n'a pas trouvee le mot de passe" << endl;
+    else
+    {
+        cout << endl << "le thread numero " << num << " a trouvee le mot de passe " << endl;
+        return;
+    }
 }
 
 
-void Dictionnaire::search(int numFile, string password) {
+void Dictionnaire::search(int numFile, string password,int threadNumber) {
     FILE* stream;
     string filename = to_string(numFile) + ".txt";
 
@@ -72,11 +77,16 @@ void Dictionnaire::search(int numFile, string password) {
                 mtx.lock();
                 if (searchingPassword == "") searchingPassword = line;
                 isPasswordFound = true;
+                shouldShowProgress = false;
                 foundPasswordFileName = filename;
+                showProgress(threadNumber);
                 mtx.unlock();
                 break;
             }
+        
         }
+        if(shouldShowProgress)showProgress(threadNumber);
+
         // ferme le fichier
         infile.close();
     }
