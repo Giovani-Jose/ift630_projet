@@ -6,10 +6,12 @@ UserInput::UserInput() {
 UserInput::~UserInput() {
 }
 
-void UserInput::getPasswordFromUserInput()
+string UserInput::getPasswordFromUserInput()
 {
 	cout << "Entrez votre mot de passe :" << endl;
 	cin >> motDePasseCible;
+
+	return motDePasseCible;
 }
 
 

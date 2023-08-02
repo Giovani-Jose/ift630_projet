@@ -9,9 +9,10 @@ private:
     int attributPrive;
 
 public:
-    UserInput();
+     UserInput();
     ~UserInput();
-    void getPasswordFromUserInput();
+    string getPasswordFromUserInput();
+
 
 private:
     string motDePasseCible;
