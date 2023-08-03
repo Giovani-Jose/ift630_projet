@@ -1,87 +1,51 @@
-#include <mpi.h>
 #include <iostream>
 #include <string>
-#include <chrono>
+#include <omp.h>
 #include "BruteForce.h"
 
 using namespace std;
-using namespace std::chrono;
+
+
 
 BruteForce::BruteForce() {
 }
 
-void BruteForce::generate_alphanumeric(int length, string passwd, string current, string alphabet, bool& passFoundAllComb) {
-    
-    if (current.length() == length || passFoundAllComb) {    
-        
-        if (passwd == current) {
-            passFoundAllComb = true;
-            mot = current;
-        }
-    }
-    else {
-        for (int i = 0; i < alphabet.length(); i++) {
-            string new_current = current + alphabet[i];
-            generate_alphanumeric(length, passwd, new_current, alphabet, passFoundAllComb);
-        }
-    }
-}
 
-string BruteForce::generate_all_alphanumeric(int length, string passwd, string alphabet) {
-    int rank, size;
-    bool passFoundAllComb = false;
-    string localMot = "";
+string BruteForce::force_brute_openmp(string target, string current_password, int index, int iteration) {
+    const int num_threads = omp_get_max_threads();
+    static const string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    string found_password = "";
 
-    int chunkSize = alphabet.length() / size;
-    int startIndex = rank * chunkSize;
-    int endIndex = (rank == size - 1) ? alphabet.length() : (rank + 1) * chunkSize;
+#pragma omp parallel for num_threads(num_threads) shared(found_password)
+    for (int i = 0; i < alphabet.size(); ++i)
+    {
+        if (!found_password.empty() || iteration >= MAX_ITERATIONS) // Si le mot de passe a déjà été trouvé par un autre thread, sortir prématurément
+            continue;
 
-    // Log the start of processing for each process
-    MPI_Barrier(MPI_COMM_WORLD);
-    cout << "Process " << rank << " started processing. Range: [" << startIndex << ", " << endIndex - 1 << "]" << endl;
+        string next_password = current_password;
+        next_password[index] = alphabet[i];
 
-    for (int i = startIndex; i < endIndex; i++) {
-        string current = string(1, alphabet[i]);
-        generate_alphanumeric(length, passwd, current, alphabet, passFoundAllComb);
-        if (passFoundAllComb) {
-            localMot = mot;
-            break;
-        }
-    }
-
-    // Prepare an array to hold the localMot string
-    char* localMotArray = new char[localMot.size() + 1]; // +1 for null-terminator
-    strcpy_s(localMotArray, localMot.size() + 1, localMot.c_str());
-
-    // Gather all localMot arrays into a 2D array on the root process
-    char* allLocalMot = nullptr;
-    if (rank == 0) {
-        allLocalMot = new char[size * (localMot.size() + 1)]; // Allocate space for all localMot strings
-    }
-    MPI_Gather(localMotArray, localMot.size() + 1, MPI_CHAR, allLocalMot, localMot.size() + 1, MPI_CHAR, 0, MPI_COMM_WORLD);
-
-    // Log the end of processing for each process
-    MPI_Barrier(MPI_COMM_WORLD);
-    cout << "Process " << rank << " finished processing." << endl;
-
-    // On the root process, find the correct password from the gathered strings
-    string globalMot;
-    if (rank == 0) {
-        for (int i = 0; i < size; i++) {
-            if (allLocalMot[i * (localMot.size() + 1)] != '\0') {
-                globalMot = &allLocalMot[i * (localMot.size() + 1)];
-                break;
+        if (index == target.length() - 1)
+        {
+            if (next_password == target) // Mot de passe trouvé
+            {
+#pragma omp critical // S'assurer qu'un seul thread peut mettre à jour la variable found_password
+                {
+                    if (found_password.empty())
+                    {
+                        found_password = next_password;
+                    }
+                }
             }
         }
+        else
+        {
+            found_password = force_brute_openmp(target, next_password, index + 1, iteration + 1);
+        }
     }
 
-    delete[] localMotArray;
-    delete[] allLocalMot;
-
-    return globalMot;
+    return found_password;
 }
 
 
