@@ -13,7 +13,7 @@ int main()
 
 	// Génération de mot de passe candidats
 
-    //étape 1: Fouille de dictionnaire, le mot de passe est il dans le dictionnaire?
+	//étape 1: Fouille de dictionnaire, le mot de passe est il dans le dictionnaire?
 	Dictionnaire dictionnaire;
 	if (dictionnaire.distributeThreadsForSearching(password))
 	{
@@ -23,6 +23,6 @@ int main()
 		cout << "le mot de passe n'a pas ete trouvee" << endl;
 
 	//etape2: generer une liste de combinaison et tester avec chaque combinaison
-	
+
 
 }
