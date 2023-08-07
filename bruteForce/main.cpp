@@ -77,9 +77,6 @@ int main(int argc, char** argv) {
         std::cin >> motDePasseCible;
     }
 
-    std::vector<std::string> combinaisons;
-    combinaisons.push_back(motDePasseCible);
-
     int nombreDeThreads;
     // Récupérer le nombre de threads disponibles
 #pragma omp parallel
@@ -96,6 +93,8 @@ int main(int argc, char** argv) {
     }
 
     double debutChrono = MPI_Wtime();
+
+    // Determine la longueur maximale de combinaison en fonction de la longueur du mot de passe cible.
     int longueurMax = std::min(LONGUEUR_MAX_CHAINE, static_cast<int>(motDePasseCible.length()));
 
     std::string afficherCombinaisonsChoix;
@@ -109,7 +108,11 @@ int main(int argc, char** argv) {
     // Exécution de la génération des combinaisons en parallèle
 #pragma omp parallel
     {
-        genererCombinaisons(combinaisons, longueurMax);
+        for (int i = 1; i <= longueurMax; i++) {
+            std::vector<std::string> combinaisons;
+            combinaisons.push_back(motDePasseCible);
+            genererCombinaisons(combinaisons, i);
+        }
     }
 
     if (!motDePasseTrouve) {
